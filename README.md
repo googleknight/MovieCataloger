@@ -13,7 +13,7 @@
 ## Screenshot
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/googleknight/MovieCataloger/master/MovieCataloger/Screenshots/MainWindow.jpg" alt="Screenshot"/>
+  <img src="https://raw.githubusercontent.com/googleknight/MovieCataloger/master/Screenshots/MainWindow.JPG" alt="Screenshot"/>
 </p>
 
 ## System Requirements
@@ -42,7 +42,7 @@
 ## Things that needs to be done in future
 * Update movie by giving IMDB ID manually.
 * Auto search for new movies in selected folders at boot up of software and asks to add them in catalog.
-* Import export database and files.
+* Import/export database and files.
 * Create a new menu item which generates custom view which will shows movies categorized in genre, year, language, country, director wise and generate pie chart of the data.
 * Provide a new window to copy movies to another source.
 * Write JUnit files for unit testing all methods.
