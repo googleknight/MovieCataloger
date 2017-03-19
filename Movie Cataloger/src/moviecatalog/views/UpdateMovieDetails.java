@@ -431,7 +431,7 @@ public class UpdateMovieDetails extends JDialog {
 	//////////////////////////////////////////////////////////////
 	private void createEvents() {
 		
-		//Search and update components.S 
+		//Search and update components.
 		btnSearch.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				SearchMovieInfo obj=new SearchMovieInfo(txtTitle.getText(),txtYear.getText());
@@ -513,9 +513,27 @@ public class UpdateMovieDetails extends JDialog {
 			else	//Update if it is there
 			{
 				System.out.println("updation invoked");
+				if(IMDBid.equals(res.getString("IMDBID"))) // If old and updated IMDBID are same then all other data will be same, so skip update.
+				{	
+					res.close();
+					c.close();
+					return;
+				}
 				instmt1 = c.prepareStatement("update IMDBInfo set IMDBID=?,Director =?, Year =?, Country =?,Rating =?,IMDBRating =?,Plot =? where FileFullPath=?");
-				instmt3 = c.prepareStatement("update ActorInfo set Actor=? where IMDBID=?");
-				instmt4 = c.prepareStatement("update GenreInfo set Genre=? where IMDBID=?");
+
+				// Removing incorrect data from GenreInfo
+				instmt = c.prepareStatement("delete from GenreInfo where IMDBID=?");
+				instmt.setString(1, IMDBid);
+				instmt.execute();
+
+				// Removing incorrect data from ActorInfo
+				instmt = c.prepareStatement("delete from ActorInfo where IMDBID=?");
+				instmt.setString(1, IMDBid);
+				instmt.execute();
+				
+				//Inserting new values
+				instmt3 = c.prepareStatement("insert or ignore into ActorInfo(Actor,IMDBID) values(?,?)");
+				instmt4 = c.prepareStatement("insert or ignore into GenreInfo(Genre,IMDBID) values(?,?)");
 			}
 			
 			instmt2 = c.prepareStatement("update LocalInfo set Title=?,MyRating=?, Watched=? where FileFullPath=?");

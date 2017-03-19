@@ -9,6 +9,13 @@
 > The data fetched from internet will help user to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
 > It can fetch multiple movies information from IMDB at once and user can update movie details of individual movie too.
 > User can play that movie, find its location on drive, can search for a particular movie in Catalog.
+
+## Screenshot
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/googleknight/MovieCataloger/master/MovieCataloger/Screenshots/MainWindow.jpg" alt="Screenshot"/>
+</p>
+
 ## System Requirements
 * Any 64-bit Windows OS
 * [Java Runtime Environment 64-bit 1.8 or higher](http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html)
@@ -32,13 +39,18 @@
 * Then select Update by Filtering movie name.
 * Now update rest of the movies individually, and explore the software now. Your Catalog is ready.
 
-## Features that needs to be added in future
-* Update movie by giving IMDB ID manually
+## Things that needs to be done in future
+* Update movie by giving IMDB ID manually.
 * Auto search for new movies in selected folders at boot up of software and asks to add them in catalog.
-* Import export database and files
+* Import export database and files.
 * Create a new menu item which generates custom view which will shows movies categorized in genre, year, language, country, director wise and generate pie chart of the data.
 * Provide a new window to copy movies to another source.
 * Write JUnit files for unit testing all methods.
+* Make it cross platform compatible.
+* Improve regular expression used to retrieve movie name from file name.
+* Write an independent API/ mechanism to extract movie details from IMDB, in case OMDB API is not working.
+* Improve documentation, add more comments wherever it is required.
+* Find new bugs and fix them.
 * Imrove design, imporve button names, etc.
 * Add new items in menu bar.
 
