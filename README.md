@@ -1,14 +1,14 @@
 # MovieCataloger
 > Movie Cataloger is a cataloging and organizing software developed for personal use only.
-> It will help the user to maintain their movie collection efficiently in an organized way.
+> It will help the user to maintain their movie collection efficiently and in an organized way.
 > It is capable to scan and search recursively the desired folders, drives for movies and adds them to catalog.
 > It is capable of retrieving movie’s name and other important meta data like, language, runtime, quality etc from the file.
-> It have the ability to directly fetch movie data from internet movie database (IMDb) using [OMDB](http://www.omdbapi.com/) API.
-> User can see the collection of their movies in a single window despite their actual files located across various drives and folders. 
-> User can mark those movies which he/she have watched. They can give a rating for a movie. 
-> The data fetched from internet will help user to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
-> It can fetch multiple movies information from IMDB at once and user can update movie details of individual movie too.
-> User can play that movie, find its location on drive, can search for a particular movie in Catalog.
+> It has the ability to directly fetch movie data from the internet movie database (IMDb) using [OMDB](http://www.omdbapi.com/) API.
+> Users can see their collection of their movies in a single window despite having their actual files located across various drives and folders. 
+> Users can mark those movies which they have watched. They can also give a rating for a movie. 
+> The data fetched will help users to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
+> It can fetch the data for multiple movies from IMDB at once, and users can update movie details of individual movie as well.
+> Users can play movies, find their location on the drive and can search for a particular movies in the Catalog.
 
 ## Screenshot
 
