@@ -31,6 +31,16 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import moviecatalog.common.Tools;
+import moviecatalog.views.analyze.AnalyseGenre;
+import moviecatalog.views.analyze.AnalyseLanguage;
+import moviecatalog.views.analyze.AnalyseYear;
+import moviecatalog.views.help.AboutUs;
+import moviecatalog.views.help.HelpWindow;
+import moviecatalog.views.help.HelpWindowAnalyse;
+import moviecatalog.views.help.HelpWindowCopy;
+import moviecatalog.views.help.HelpWindowMain;
+import moviecatalog.views.help.HelpWindowUpdateMovie;
+
 import javax.swing.JScrollPane;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -45,6 +55,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -79,7 +90,8 @@ public class MainWindow extends JFrame {
 	private JLabel lblPoster;
 	private JPanel pnlMovieDetails;
 	private JPanel pnlLocalInfo;
-	private JLabel lblFileFormat;
+	private JFileChooser chooser;
+    private JLabel lblFileFormat;
 	private JLabel dataMediaType;
 	private JLabel lblFilSize;
 	private JLabel dataFileSize;
@@ -120,6 +132,22 @@ public class MainWindow extends JFrame {
 	private JPanel pnlTitle;
 	private JMenuBar menuBar;
 	private JMenu mnFile;
+	private JMenu mnViewBy;
+	private JMenuItem mntmByRating;
+	private JMenuItem mntmByLanguage;
+	private JMenuItem mntmByYear;
+	private JMenu mnHelp;
+	private JMenuItem mntmAboutUs;
+	private JButton btnSelectDestination;
+	private JLabel lblWatched;
+	private JLabel lblCopy;
+	private int copycount=0;
+	private float copysize=0;
+	private JMenuItem mntmHowToSetup;
+	private JMenuItem mntmHowToCopy;
+	private JMenuItem mntmHowToAnalyze;
+	private JMenuItem mntmMainWindowFeatures;
+	private JMenuItem mntmHowToUpdate;
 
 	/**
 	 * Launch the application.
@@ -144,7 +172,9 @@ public class MainWindow extends JFrame {
 	 */
 	public MainWindow() {
 		
-		Tools.createTables();
+		Tools.createTables(); //Create tables in database if does not exists
+		Tools.checkInvlaidEntries();	//Removes entries of movies which does not exist at their location 
+		Tools.checkNew();	//Checks for new movies and gives option to add it.
 		initComponents();
 		createEvents();
 	}
@@ -173,6 +203,40 @@ public class MainWindow extends JFrame {
 
 		mntmExit = new JMenuItem("Exit");
 		mnFile.add(mntmExit);
+		
+		mnViewBy = new JMenu("Analyze Collection");
+		menuBar.add(mnViewBy);
+		
+		mntmByLanguage = new JMenuItem("By Language");
+	    mnViewBy.add(mntmByLanguage);
+		
+		mntmByYear = new JMenuItem("By Year");
+		mnViewBy.add(mntmByYear);
+		
+		mntmByRating = new JMenuItem("By Genre");
+		mnViewBy.add(mntmByRating);
+		
+		mnHelp = new JMenu("Help");
+		menuBar.add(mnHelp);
+		
+		mntmHowToSetup = new JMenuItem("How to setup catalog");
+		
+		mnHelp.add(mntmHowToSetup);
+		
+		mntmMainWindowFeatures = new JMenuItem("Main Window features");
+		mnHelp.add(mntmMainWindowFeatures);
+		
+		mntmHowToUpdate = new JMenuItem("How to update movie data");
+		mnHelp.add(mntmHowToUpdate);
+		
+		mntmHowToCopy = new JMenuItem("How to copy");
+		mnHelp.add(mntmHowToCopy);
+		
+		mntmHowToAnalyze = new JMenuItem("How to analyze");
+		mnHelp.add(mntmHowToAnalyze);
+		
+		mntmAboutUs = new JMenuItem("About Us");
+		mnHelp.add(mntmAboutUs);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -211,42 +275,74 @@ public class MainWindow extends JFrame {
 		txtSearch = new JTextField();
 		txtSearch.setToolTipText("Enter Movie Name to search");
 		txtSearch.setColumns(10);
-
+		btnSelectDestination = new JButton("Select Destination And Copy");
+		
+		lblWatched = new JLabel("Watched:");
+		
+		lblCopy = new JLabel("");
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
-		gl_contentPane.setHorizontalGroup(gl_contentPane.createParallelGroup(Alignment.LEADING).addGroup(gl_contentPane
-				.createSequentialGroup().addContainerGap()
-				.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING).addComponent(lblTotalMovies)
-						.addGroup(gl_contentPane.createSequentialGroup().addGroup(gl_contentPane
-								.createParallelGroup(Alignment.LEADING, false)
-								.addComponent(slptable, GroupLayout.PREFERRED_SIZE, 365, GroupLayout.PREFERRED_SIZE)
-								.addGroup(gl_contentPane.createSequentialGroup().addComponent(lblMovieNameSearch)
-										.addPreferredGap(ComponentPlacement.UNRELATED).addComponent(txtSearch)))
-								.addGap(32)
-								.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-										.addComponent(pnlMovieDetails, GroupLayout.DEFAULT_SIZE, 935,
-												Short.MAX_VALUE)
-										.addGroup(gl_contentPane.createSequentialGroup().addComponent(btnScanFolders)
-												.addGap(40).addComponent(btnUpdateMovieDetails)
-												.addPreferredGap(ComponentPlacement.UNRELATED)
-												.addComponent(btnBatchUpdate)
-												.addPreferredGap(ComponentPlacement.UNRELATED)
-												.addComponent(btnRemoveMovieFrom)
-												.addPreferredGap(ComponentPlacement.RELATED, 107, Short.MAX_VALUE)
-												.addComponent(btnPlay).addPreferredGap(ComponentPlacement.UNRELATED)
-												.addComponent(btnOpenContiningFolder).addGap(140)))))
-				.addContainerGap()));
-		gl_contentPane.setVerticalGroup(gl_contentPane.createParallelGroup(Alignment.LEADING).addGroup(gl_contentPane
-				.createSequentialGroup().addContainerGap()
-				.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE).addComponent(lblMovieNameSearch)
-						.addComponent(txtSearch, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
-								GroupLayout.PREFERRED_SIZE)
-						.addComponent(btnScanFolders).addComponent(btnUpdateMovieDetails).addComponent(btnBatchUpdate)
-						.addComponent(btnPlay).addComponent(btnOpenContiningFolder).addComponent(btnRemoveMovieFrom))
-				.addGap(16)
-				.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addComponent(pnlMovieDetails, GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE)
-						.addComponent(slptable, GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE))
-				.addPreferredGap(ComponentPlacement.RELATED).addComponent(lblTotalMovies)));
+		gl_contentPane.setHorizontalGroup(
+			gl_contentPane.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_contentPane.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addComponent(lblTotalMovies)
+							.addGap(26)
+							.addComponent(lblWatched)
+							.addGap(33)
+							.addComponent(lblCopy))
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+								.addGroup(gl_contentPane.createSequentialGroup()
+									.addComponent(lblMovieNameSearch)
+									.addPreferredGap(ComponentPlacement.UNRELATED)
+									.addComponent(txtSearch, 250, 250, 250))
+								.addComponent(slptable, GroupLayout.PREFERRED_SIZE, 391, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+								.addComponent(pnlMovieDetails, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+								.addGroup(gl_contentPane.createSequentialGroup()
+									.addComponent(btnScanFolders)
+									.addGap(40)
+									.addComponent(btnUpdateMovieDetails)
+									.addPreferredGap(ComponentPlacement.UNRELATED)
+									.addComponent(btnBatchUpdate)
+									.addPreferredGap(ComponentPlacement.UNRELATED)
+									.addComponent(btnRemoveMovieFrom)
+									.addGap(18)
+									.addComponent(btnPlay)
+									.addPreferredGap(ComponentPlacement.RELATED)
+									.addComponent(btnOpenContiningFolder)
+									.addGap(17)
+									.addComponent(btnSelectDestination)))))
+					.addContainerGap())
+		);
+		gl_contentPane.setVerticalGroup(
+			gl_contentPane.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_contentPane.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
+							.addComponent(lblMovieNameSearch)
+							.addComponent(txtSearch, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+							.addComponent(btnScanFolders)
+							.addComponent(btnUpdateMovieDetails)
+							.addComponent(btnBatchUpdate)
+							.addComponent(btnRemoveMovieFrom)
+							.addComponent(btnPlay)
+							.addComponent(btnOpenContiningFolder))
+						.addComponent(btnSelectDestination))
+					.addGap(16)
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+						.addComponent(slptable, GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE)
+						.addComponent(pnlMovieDetails, GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblTotalMovies)
+						.addComponent(lblWatched)
+						.addComponent(lblCopy)))
+		);
 
 		/////////////////////////////////////////////////////////////////////////////
 		// Side panel of movie information and its components and properties
@@ -468,22 +564,30 @@ public class MainWindow extends JFrame {
 		tblmovie = new JTable();
 		tblmovie.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		tblmovie.setModel(
-				new DefaultTableModel(new Object[][] {}, new String[] { "Movie Name", "My Rating", "Watched" }) {
-					Class[] columnTypes = new Class[] { String.class, Integer.class, Boolean.class };
-
-					public Class getColumnClass(int columnIndex) {
-						return columnTypes[columnIndex];
-					};
-
-					boolean[] columnEditables = new boolean[] { false, true, true };
-
-					public boolean isCellEditable(int row, int column) {
-						return columnEditables[column];
-					}
-				});
-		tblmovie.getColumnModel().getColumn(0).setPreferredWidth(235);
-		tblmovie.getColumnModel().getColumn(1).setPreferredWidth(58);
-		tblmovie.getColumnModel().getColumn(2).setPreferredWidth(53);
+				new DefaultTableModel(
+			new Object[][] {
+			},
+			new String[] {
+				"Copy", "Movie Name", "My Rating", "Watched"
+			}
+		) {
+			Class[] columnTypes = new Class[] {
+				Boolean.class, String.class, Integer.class, Boolean.class
+			};
+			public Class getColumnClass(int columnIndex) {
+				return columnTypes[columnIndex];
+			}
+			boolean[] columnEditables = new boolean[] {
+				true, false, true, true
+			};
+			public boolean isCellEditable(int row, int column) {
+				return columnEditables[column];
+			}
+		});
+		tblmovie.getColumnModel().getColumn(0).setPreferredWidth(39);
+		tblmovie.getColumnModel().getColumn(1).setPreferredWidth(215);
+		tblmovie.getColumnModel().getColumn(2).setPreferredWidth(58);
+		tblmovie.getColumnModel().getColumn(3).setPreferredWidth(60);
 		tblmovie.setAutoCreateRowSorter(true);
 		tblmovie.setRowHeight(25);
 		loadtable();// load data into table
@@ -493,17 +597,16 @@ public class MainWindow extends JFrame {
 		DefaultTableCellRenderer renderer1 = new DefaultTableCellRenderer();
 		DefaultTableCellRenderer renderer2 = new DefaultTableCellRenderer();
 		renderer1.setToolTipText("Double click to play movie");
-		tblmovie.getColumnModel().getColumn(0).setCellRenderer(renderer1);
+		tblmovie.getColumnModel().getColumn(1).setCellRenderer(renderer1);
 		renderer2.setHorizontalAlignment(JLabel.CENTER); // Center align text
 		renderer2.setToolTipText("Click to change your rating.");
-		tblmovie.getColumnModel().getColumn(1).setCellRenderer(renderer2);
+		tblmovie.getColumnModel().getColumn(2).setCellRenderer(renderer2);
 		rowSorter = new TableRowSorter<>(tblmovie.getModel());
 		tblmovie.setRowSorter(rowSorter);
 		tblmovie.changeSelection(0, 0, false, false);
 		if (!Tools.isDBEmpty())
 			loadPanelMovieDetailsData();
 		slptable.setViewportView(tblmovie);
-
 		contentPane.setLayout(gl_contentPane);
 	}
 
@@ -512,9 +615,11 @@ public class MainWindow extends JFrame {
 	//////////////////////////////////////////////////////////////////////////////////
 
 	public void setUpMyRatingColumn() {
+
 		// Set up the editor for the my rating cells.
 
-		TableColumn myratingcolumn = tblmovie.getColumnModel().getColumn(1);
+		TableColumn myratingcolumn = tblmovie.getColumnModel().getColumn(2);
+
 		JComboBox comboBox = new JComboBox();
 		for (int i = 0; i <= 10; i++)
 			comboBox.addItem(i);
@@ -532,8 +637,9 @@ public class MainWindow extends JFrame {
 		try {
 			Class.forName("org.sqlite.JDBC");
 			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			int count=0;
 			stmt = c.createStatement();
-			String sql = "select Title,MyRating,Watched from LocalInfo";
+			String sql = "select Title,MyRating,Watched from LocalInfo order by Title";
 			ResultSet res = stmt.executeQuery(sql);
 			DefaultTableModel tblmodel = (DefaultTableModel) tblmovie.getModel();
 			tblmodel.setRowCount(0);
@@ -542,12 +648,13 @@ public class MainWindow extends JFrame {
 				int myrating = Integer
 						.parseInt(res.getString("MyRating").isEmpty() == true ? "0" : res.getString("MyRating"));
 				boolean watched = res.getBoolean("Watched");
-				tblmodel.addRow(new Object[] { moviename, myrating, watched });
+				count=(watched==true)?count+1:count;
+				tblmodel.addRow(new Object[] { false,moviename, myrating, watched });
 			}
 			res.close();
 			stmt.close();
 			c.close();
-
+			lblWatched.setText("Watched:" + count);
 			lblTotalMovies.setText("Total Movies:" + tblmodel.getRowCount());
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e);
@@ -557,9 +664,10 @@ public class MainWindow extends JFrame {
 	//// Movies information is loaded into Panel
 	//////////////////////////////////////////////////////////////////////////////////
 	protected void loadPanelMovieDetailsData() {
+		System.out.println("Load invoked");
 		pnlLocalInfo.setVisible(true);
 		pnlMovieDetails.setVisible(true);
-		String title = (String) tblmovie.getValueAt(tblmovie.getSelectedRow(), 0);
+		String title = (String) tblmovie.getValueAt(tblmovie.getSelectedRow(), 1);
 		String filefullpath = Tools.getFullPath(title);
 		String IMDBID = Tools.getIMDBID(title);
 		File file = new File("Posters\\" + IMDBID + ".jpg");
@@ -608,17 +716,19 @@ public class MainWindow extends JFrame {
 				dataYear.setText(res.getString("Year"));
 				dataIMDBRating.setText(res.getString("IMDBRating"));
 				dataRating.setText(res.getString("Rating"));
-				dataCountry.setText(res.getString("Country"));
+				dataCountry.setText("N/A");	//Until Country Info is unavailable
+				//dataCountry.setText(res.getString("Country"));
 				dataDirector.setText(res.getString("Director"));
 				dataGenre.setText(Tools.getGenre(IMDBID));
 				dataActor.setText(Tools.getActor(IMDBID));
 				txtAreaPlot.setText(res.getString("Plot"));
 			}
-			dataMyRating.setText("" + tblmovie.getValueAt(tblmovie.getSelectedRow(), 1));
+			dataMyRating.setText("" + tblmovie.getValueAt(tblmovie.getSelectedRow(), 2));
 			c.close();
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
+		System.out.println("Load complete");
 
 	}	
 	/////////////////////////////////////////////////////////////
@@ -626,6 +736,7 @@ public class MainWindow extends JFrame {
 	/////////////////////////////////////////////////////////////
 	private void createEvents() {
 	
+		//File Menu
 		mntmExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int ret = JOptionPane.showConfirmDialog(null, "Are you sure you want to exit?");
@@ -636,12 +747,88 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+
+		//Help Menu
+		mntmHowToSetup.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				HelpWindow obj=new HelpWindow();
+				obj.setVisible(true);
+			}
+		});
 		
+		mntmMainWindowFeatures.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				HelpWindowMain obj=new HelpWindowMain();
+				obj.setVisible(true);
+			}
+		});
+		mntmHowToUpdate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				HelpWindowUpdateMovie obj=new HelpWindowUpdateMovie();
+				obj.setVisible(true);
+			}
+		});		
+		mntmHowToCopy.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				HelpWindowCopy obj=new HelpWindowCopy();
+				obj.setVisible(true);
+			}
+		});
+		
+		mntmHowToAnalyze.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				HelpWindowAnalyse obj=new HelpWindowAnalyse();
+				obj.setVisible(true);
+			}
+		});
+
+		//About Us
+		mntmAboutUs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				AboutUs abs=new AboutUs();
+				abs.setModal(true);
+				abs.setVisible(true);
+				abs.dispose();
+            	
+			}
+		});
+
+
+		//Analyzing movie collection by Language
+		mntmByLanguage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				AnalyseLanguage asl=new AnalyseLanguage();
+				//asl.setModal(true);
+				asl.setVisible(true);
+				
+             }
+		});
+		//Analyzing movie collection by Genre
+		mntmByRating.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				AnalyseGenre asg=new AnalyseGenre();
+				//asg.setModal(true);
+				asg.setVisible(true);
+				
+			}
+		});
+		//Analyzing movie collection by Year
+		mntmByYear.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				AnalyseYear asy=new AnalyseYear();
+				//asy.setModal(true);
+				asy.setVisible(true);
+				
+			}
+		});	
+		
+		//Click Poster to open image
 		lblPoster.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
-				String imdbid = Tools.getIMDBID(tblmovie.getValueAt(tblmovie.getSelectedRow(), 0) + "");
+				String imdbid = Tools.getIMDBID(tblmovie.getValueAt(tblmovie.getSelectedRow(), 1) + "");
 				if (!imdbid.isEmpty())
 					try {
 						Desktop.getDesktop().open(new File("Posters\\" + imdbid + ".jpg")); //Open Poster image.
@@ -663,7 +850,7 @@ public class MainWindow extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 
-				String imdbid = Tools.getIMDBID(tblmovie.getValueAt(tblmovie.getSelectedRow(), 0) + "");
+				String imdbid = Tools.getIMDBID(tblmovie.getValueAt(tblmovie.getSelectedRow(), 1) + "");
 				if (!imdbid.isEmpty())
 					try {
 						Desktop.getDesktop().browse(new URI("http://www.imdb.com/title/" + imdbid + "/"));  //Open link in browser
@@ -691,7 +878,7 @@ public class MainWindow extends JFrame {
 					try {
 
 						Desktop.getDesktop().open(new File(
-								Tools.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 0).toString()))); //Open movie on double click
+								Tools.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 1).toString()))); //Open movie on double click
 					} catch (IOException e1) {
 
 						e1.printStackTrace();
@@ -750,25 +937,26 @@ public class MainWindow extends JFrame {
 		tblmovie.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				if (tblmovie.getSelectedRow() >= 0 && tblmovie.getSelectedColumn() == 0) {
+				if (tblmovie.getSelectedRow() >= 0 && tblmovie.getSelectedColumn() == 1) {
 					loadPanelMovieDetailsData();
 				}
 			}
 		});
 
+		//Table update events
 		TableModel model = tblmovie.getModel();
 		model.addTableModelListener(new TableModelListener() {
 
 			@Override
 			public void tableChanged(TableModelEvent tme) {
-				if (tme.getType() == TableModelEvent.UPDATE && tme.getColumn() == 2) {// If watched check box value is changed then update it 
+				if (tme.getType() == TableModelEvent.UPDATE && tme.getColumn() == 3) {// If watched check box value is changed then update it 
 					Connection c;
 					PreparedStatement stmt;
 					try {
 						Class.forName("org.sqlite.JDBC");
 						c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
 						String sql = "update LocalInfo set Watched=? where Title=?";
-						String title = (String) model.getValueAt(tme.getFirstRow(), 0);//  Getting movie name
+						String title = (String) model.getValueAt(tme.getFirstRow(), 1);//  Getting movie name
 						stmt = c.prepareStatement(sql);
 						int ans = ((boolean) model.getValueAt(tme.getFirstRow(), tme.getColumn())) ? 1 : 0;//Getting check box value and converting it to int
 						stmt.setInt(1, ans);
@@ -777,13 +965,13 @@ public class MainWindow extends JFrame {
 						c.close();
 						loadPanelMovieDetailsData(); // showing new contents of that movie in panel 
 						pnlMovieDetails.setVisible(true);
-
+						loadtable();
 					} catch (Exception e) {
 						
 						JOptionPane.showMessageDialog(null, e);
 					}
 
-				} else if (tme.getType() == TableModelEvent.UPDATE && tme.getColumn() == 1) { //If new rating is selected then update it
+				} else if (tme.getType() == TableModelEvent.UPDATE && tme.getColumn() == 2) { //If new rating is selected then update it
 					Connection c;
 					PreparedStatement stmt;
 					try {
@@ -791,9 +979,9 @@ public class MainWindow extends JFrame {
 						c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
 						System.out.println("Listener invoked");
 						String sql = "update LocalInfo set MyRating=? where Title=?";
-						String title = (String) model.getValueAt(tme.getFirstRow(), 0);//getting selected movie name
+						String title = (String) model.getValueAt(tme.getFirstRow(), 1);//getting selected movie name
 						stmt = c.prepareStatement(sql);
-						String myrating = String.valueOf(model.getValueAt(tme.getFirstRow(), 1)); //getting new rating value
+						String myrating = String.valueOf(model.getValueAt(tme.getFirstRow(), 2)); //getting new rating value
 						stmt.setString(1, myrating);
 						stmt.setString(2, title);
 						stmt.executeUpdate();//database updated
@@ -805,6 +993,28 @@ public class MainWindow extends JFrame {
 						JOptionPane.showMessageDialog(null, e);
 					}
 				}
+				else if (tme.getType() == TableModelEvent.UPDATE && tme.getColumn() == 0) {// If copy check box value is changed then update label
+					{
+						//Getting filesize of each selected movie and showing their sum and count in terms of GB  
+						String Size=Tools.getSize((String)model.getValueAt(tme.getFirstRow(), 1));
+						Float size=Float.parseFloat(Size.replaceAll("[^0-9\\.]",""));
+						if(Size.endsWith("MB"))
+							size/=1024;
+						if(((boolean) model.getValueAt(tme.getFirstRow(), tme.getColumn()))) //Getting check box value
+						{														
+							copysize+=size;							
+							lblCopy.setText("Selected for copying:"+(++copycount)+" ("+String.format("%.2f", copysize)+" GB)");
+						}
+						else
+						{
+							copysize-=size;	
+							lblCopy.setText("Selected for copying:"+(--copycount)+" ("+String.format("%.2f", copysize)+" GB)");	
+						}
+						if(copycount==0)
+							lblCopy.setText("");
+						
+					}
+				}
 			}
 		});
 
@@ -813,59 +1023,23 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (tblmovie.getSelectedRow() >= 0) {
 					int ret = JOptionPane.showConfirmDialog(null, "Do you want to remove "
-							+ tblmovie.getValueAt(tblmovie.getSelectedRow(), 0) + " from Catalog ?");
+							+ tblmovie.getValueAt(tblmovie.getSelectedRow(), 1) + " from Catalog ?");
 					if (ret == JOptionPane.YES_OPTION) {
-						Connection c;
-						PreparedStatement instmt;
-						try {
-							Class.forName("org.sqlite.JDBC");
-							c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
-							String filefullpath, IMDBid,
-									title = (String) tblmovie.getValueAt(tblmovie.getSelectedRow(), 0);
-							filefullpath = Tools.getFullPath(title);
-							IMDBid = Tools.getIMDBID(title);
-
-							// Remove from LocalInfo
-							instmt = c.prepareStatement("delete from LocalInfo where Title=?");
-							instmt.setString(1, title);
-							instmt.execute();
-
-							// Remove from IMDBInfo
-							instmt = c.prepareStatement("delete from IMDBInfo where IMDBID=?");
-							instmt.setString(1, IMDBid);
-							instmt.execute();
-
-							// Remove from GenreInfo
-							instmt = c.prepareStatement("delete from GenreInfo where IMDBID=?");
-							instmt.setString(1, IMDBid);
-							instmt.execute();
-
-							// Remove from ActorInfo
-							instmt = c.prepareStatement("delete from ActorInfo where IMDBID=?");
-							instmt.setString(1, IMDBid);
-							instmt.execute();
-
-							// Remove from LanguageInfo
-							instmt = c.prepareStatement("delete from LanguageInfo where FileFullPath=?");
-							instmt.setString(1, filefullpath);
-							instmt.execute();
-
-							//RemovingPoster 
-							File file = new File("Posters\\" + IMDBid + ".jpg");
-							file.delete();
-							c.close();
-							JOptionPane.showMessageDialog(null, "Movie removed From Catalog!");
-							loadtable();	//Loading movies table
+						Tools.removeMovie((String) tblmovie.getValueAt(tblmovie.getSelectedRow(), 1));
+						JOptionPane.showMessageDialog(null, "Movie removed From Catalog!");
+						loadtable(); // Loading movies table
+						try{
+							txtSearch.setText("");
 							tblmovie.changeSelection(0, 0, false, false);// selecting first row
-							loadPanelMovieDetailsData(); 
-						} catch (Exception e) {
-							JOptionPane.showMessageDialog(null, e);
+							loadPanelMovieDetailsData();
+						} catch (NullPointerException e) {
+
 						}
+
 					}
 				} else {
 					JOptionPane.showMessageDialog(null, "Please Select One Movie!");
 				}
-
 			}
 		});
 		//Play selected movie 
@@ -876,7 +1050,7 @@ public class MainWindow extends JFrame {
 					try {
 
 						Desktop.getDesktop().open(new File(
-								Tools.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 0).toString())));
+								Tools.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 1).toString())));
 					} catch (IOException e) {
 
 						e.printStackTrace();
@@ -892,7 +1066,7 @@ public class MainWindow extends JFrame {
 				if (tblmovie.getSelectedRow() >= 0)
 					try {
 						String fullpath = Tools
-								.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 0).toString());
+								.getFullPath(tblmovie.getValueAt(tblmovie.getSelectedRow(), 1).toString());
 						Runtime.getRuntime().exec("explorer.exe /select," + fullpath); //Opening Windows Explorer and selecting that file
 					} catch (IOException e) {
 
@@ -908,12 +1082,12 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (tblmovie.getSelectedRow() >= 0) {
 					int row = tblmovie.getSelectedRow();
-					String moviename = tblmovie.getValueAt(tblmovie.getSelectedRow(), 0).toString();//get selected movie name
+					String moviename = tblmovie.getValueAt(tblmovie.getSelectedRow(), 1).toString();//get selected movie name
 					String filefullpath = Tools.getFullPath(moviename);// get full path of movie
 					UpdateMovieDetails obj = new UpdateMovieDetails(filefullpath); //update that movie
 					obj.setModal(true);
 					obj.setVisible(true);
-					loadtable(); // load table
+					loadtable();
 					tblmovie.changeSelection(row, 0, false, false);
 					loadPanelMovieDetailsData();
 				} else
@@ -931,6 +1105,39 @@ public class MainWindow extends JFrame {
 				loadPanelMovieDetailsData();
 			}
 		});
-
+		//Selecting Destination path for Batch Copy and Invoking the copy function
+		btnSelectDestination.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int n=tblmovie.getModel().getRowCount();
+				int i;
+            	if(copycount==0)
+            	{
+            		JOptionPane.showMessageDialog(null, "Please mark any movie before copying.");
+            		return;
+            	}	
+				String path=null;
+				chooser = new JFileChooser();	//For selecting folder
+				chooser.setCurrentDirectory(new java.io.File("."));
+				chooser.setDialogTitle("Select Destination For Copy");
+				chooser.setApproveButtonText("Select Folder");
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				chooser.setAcceptAllFileFilterUsed(false);
+				if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                  copycount=0;
+                  copysize=0;
+				  path=chooser.getSelectedFile().toString();
+                  BatchCopy obj=new BatchCopy((DefaultTableModel) tblmovie.getModel(),path);//copies movies to destination
+	              obj.setVisible(true);
+	                
+                } else {
+                	  
+                	for( i=0;i<n;i++)
+        			{
+        				if((boolean) tblmovie.getModel().getValueAt(i, 0))
+        			         tblmovie.getModel().setValueAt(false, i, 0);    //Clearing the Checked boxes
+				
+					 }
+			}
+				}});
 	}
 }

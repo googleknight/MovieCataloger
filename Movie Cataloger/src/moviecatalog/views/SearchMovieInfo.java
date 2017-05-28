@@ -15,22 +15,27 @@ import javax.swing.JOptionPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import com.omdbapi.MovieType;
-import com.omdbapi.Omdb;
-import com.omdbapi.OmdbConnectionErrorException;
-import com.omdbapi.OmdbMovieNotFoundException;
-import com.omdbapi.SearchResult;
+import com.omertron.imdbapi.ImdbApi;
+import com.omertron.imdbapi.ImdbException;
+import com.omertron.imdbapi.model.ImdbMovieDetails;
+import com.omertron.imdbapi.search.SearchObject;
+
 import moviecatalog.common.Tools;
 import javax.swing.JScrollPane;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
-import javax.swing.DefaultListModel;
 import javax.swing.UIManager;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.awt.event.ActionEvent;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 
 public class SearchMovieInfo extends JDialog {
@@ -42,6 +47,15 @@ public class SearchMovieInfo extends JDialog {
 	private JTable tblmovie;
 	private JLabel lblStatus;
 	private String IMDBId="0";
+	private int poster=0;
+
+	public int getPoster() {
+		return poster;
+	}
+
+	public void setPoster(int poster) {
+		this.poster = poster;
+	}
 
 	public int getYear() {
 		return year;
@@ -205,6 +219,21 @@ public class SearchMovieInfo extends JDialog {
 		}
 		
 	}
+	
+	//Delete poster images which are not required
+	private void deletetempfiles(int index)
+	{
+		while(poster>=0)
+		{
+			File file = new File(poster+".jpg");
+			if (file.exists() && poster!=index)
+				file.delete();
+			poster--;
+		}
+		
+	}
+	
+	
 	//////////////////////////////////////////////////////////////
 	//// This method contains all of the code for creating events.
 	//////////////////////////////////////////////////////////////
@@ -214,9 +243,16 @@ public class SearchMovieInfo extends JDialog {
 		btnSelect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				DefaultTableModel model=(DefaultTableModel)tblmovie.getModel();
-				if(tblmovie.getSelectedRow()>=0)
+				int index=tblmovie.getSelectedRow();
+				if(index>=0)
 				{
 					IMDBId=(String)model.getValueAt(tblmovie.getSelectedRow(),0);
+					deletetempfiles(index);//delete other temporary poster images except the selected 
+					File file = new File(index+".jpg");
+					if (file.exists())
+						poster=index;
+					else
+						poster=-1; //if selected one does not have poster 
 					dispose();
 				}
 				else
@@ -227,7 +263,8 @@ public class SearchMovieInfo extends JDialog {
 		//Exit the dialog box
 		btnCancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				dispose();
+				deletetempfiles(-1);
+				dispose();				
 			}
 		});
 	}
@@ -238,15 +275,78 @@ public class SearchMovieInfo extends JDialog {
 //////////////////////////////////////////////////////////////////////////////////
 class MyThread extends Thread{
 	private SearchMovieInfo obj;
+	private int temp=0;
 	public MyThread(SearchMovieInfo obj) {
 		this.obj=obj;
+	}
+	//create an image file for each result
+	public void writeimage(URL imgurl) throws Exception
+	{
+		ImageIcon icon = new ImageIcon(ImageIO.read(imgurl));
+		BufferedImage bimg = new BufferedImage(icon.getIconWidth(),icon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+		Graphics g = bimg.createGraphics();
+		icon.paintIcon(null, g, 0,0);
+		g.dispose();
+		File outputfile= new File((temp++)+".jpg");
+		ImageIO.write(bimg, "jpg", outputfile);
 	}
 	public void run()
 	{
 		obj.getLblStatus().setText("Searching.....");
 		try {
+		
+			//New IMDBAPI code added
+			String title,url,imdbid;
+			ImdbApi imdbApi = new ImdbApi();
 			DefaultTableModel tblmodel = (DefaultTableModel) obj.getTblmovie().getModel();
-			List<SearchResult> search ;
+			Map<String, List<SearchObject>> searchResultMap =null;
+			try{				
+				searchResultMap = imdbApi.getSearch(obj.getMoviename().trim());
+			}catch (ImdbException e) {
+				JOptionPane.showMessageDialog(null,"No movie found");
+				e.printStackTrace();
+				obj.dispose();
+			}
+			List<SearchObject> result = searchResultMap.get("Search results");
+			if(searchResultMap.isEmpty())
+				JOptionPane.showMessageDialog(null,"No movie found");
+			for (SearchObject so : result) {
+				try{
+				if (so instanceof ImdbMovieDetails && ((ImdbMovieDetails) so).getType().equals("feature")) {
+					if(!so.getImage().getUrl().isEmpty())
+					{						
+						if(obj.getYear()!=0)
+							if(obj.getYear()!=((ImdbMovieDetails) so).getYear())
+								continue;
+						imdbid=((ImdbMovieDetails) so).getImdbId();
+						title=((ImdbMovieDetails) so).getTitle() +"("+((ImdbMovieDetails) so).getYear()+")";
+						url=so.getImage().getUrl();
+						writeimage(new URL(url.trim()));//create image and then show						
+						tblmodel.addRow(new Object[]{imdbid,Tools.scaleImage(new ImageIcon((temp-1)+".jpg"),140,185),title});						
+					}
+					if(so.getImage().getUrl().isEmpty() )
+					{
+						if(obj.getYear()!=0)
+							if(obj.getYear()!=((ImdbMovieDetails) so).getYear())
+								continue;
+						imdbid=((ImdbMovieDetails) so).getImdbId();
+						title=((ImdbMovieDetails) so).getTitle() +"("+((ImdbMovieDetails) so).getYear()+")";
+						temp++;
+						tblmodel.addRow(new Object[]{imdbid,Tools.scaleImage(new ImageIcon("Posters\\Default.jpg"),140,185),title});
+					}
+				
+				}
+				}
+				catch(NullPointerException e)
+				{}
+				catch(IIOException e2)
+				{}
+				obj.setPoster(temp);
+			}
+			
+			//OLD OMDB CODE
+			
+			/*List<SearchResult> search ;
 			if(obj.getYear()!=0) //if year is there search by year otherwise don't use year.
 				search= new Omdb().year(obj.getYear()).type(MovieType.movie).search(obj.getMoviename().trim());
 			else
@@ -258,20 +358,8 @@ class MyThread extends Thread{
 				else
 					tblmodel.addRow(new Object[]{x.getImdbID(),Tools.scaleImage(new ImageIcon(ImageIO.read(new URL(x.getPoster().trim()))),140,185),x.getTitle()+" ("+x.getYear()+")"});
 				
-			}
+			}*/
 			obj.getLblStatus().setText("Search Completed");
-		}
-		catch(OmdbMovieNotFoundException e)
-		{
-			JOptionPane.showMessageDialog(null, e.getMessage());
-			obj.dispose();
-			
-		}	
-		catch(OmdbConnectionErrorException e1)
-		{
-			JOptionPane.showMessageDialog(null, e1.getMessage());
-			obj.dispose();
-			
 		}
 		catch (Exception e) {
 			

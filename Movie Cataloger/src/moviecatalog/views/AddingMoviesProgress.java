@@ -154,6 +154,8 @@ class updateProgressbar extends Thread{
 						for (int j = 0; j < 7; j++)
 							instmt1.setString(j + 1, movieinfo[j]);		
 						instmt2.setString(1, filefullpath);
+						if(languages.isEmpty())
+							languages.add("N/A");	
 						for(String language:languages)
 						{
 							instmt2.setString(2, language);

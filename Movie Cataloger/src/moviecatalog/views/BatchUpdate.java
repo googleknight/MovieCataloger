@@ -68,7 +68,7 @@ public class BatchUpdate extends JDialog {
 	//// creating and initializing components.
 	//////////////////////////////////////////////////////////////////////////////////
 	private void initComponents() {
-		setTitle("Batch Update movies from Internt");
+		setTitle("Batch Update movies from Internet");
 		setIconImage(Toolkit.getDefaultToolkit().getImage(BatchUpdate.class.getResource("/moviecatalog/resources/icon.png")));
 		setBounds(100, 100, 516, 370);
 		contentPanel = new JPanel();

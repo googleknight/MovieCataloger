@@ -55,7 +55,9 @@ public class ScanFolders extends JDialog {
 	DefaultListModel<JCheckBox> extmodel;
 	private JScrollPane slpExtension;
 	
-
+	public JTable getTblmoviepath() {
+		return tblmoviepath;
+	}
 	/**
 	 * Launch the application.
 	 */
@@ -202,7 +204,7 @@ public class ScanFolders extends JDialog {
 	//////////////////////////////////////////////////////////////////////////////////
 	//// It scans folders given in folder list and adds movie to list
 	//////////////////////////////////////////////////////////////////////////////////
-	private void initmovielist() {
+	public void initmovielist() {
 		JSONParser parser = new JSONParser();
 		DefaultTableModel tblmodel = (DefaultTableModel) tblmoviepath.getModel();
 		tblmodel.setRowCount(0);

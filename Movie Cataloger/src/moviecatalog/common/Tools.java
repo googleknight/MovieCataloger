@@ -26,7 +26,14 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import com.omertron.imdbapi.ImdbApi;
+import com.omertron.imdbapi.ImdbException;
+import com.omertron.imdbapi.model.ImdbMovieDetails;
+import com.omertron.imdbapi.search.SearchObject;
+
 import moviecatalog.common.*;
+import moviecatalog.views.ScanFolders;
 
 /**
  * @author Shubham Mathur
@@ -482,5 +489,209 @@ public class Tools {
 			JOptionPane.showMessageDialog(null,e);
 		}
 	}
+	/**
+	 * Returns Rating of the Given IMDB Title
+	 */		
+	public static String getRating(String title) {
+		String rating = null;
+		Connection c;
+		ResultSet res = null;
+		PreparedStatement stmt;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			String sql = "select IMDBRating from IMDBInfo where FileFullPath in(select FileFullPath from LocalInfo where Title=?)";
+			stmt = c.prepareStatement(sql);
+			stmt.setString(1, title);
+			res = stmt.executeQuery();
+			while (res.next()) {
+				rating = (res.getString("IMDBRating"));
+			}
+			res.close();
+			stmt.close();
+			c.close();
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e);
+		}
+		return rating;
+	}
+	/**
+	 * Returns Year of the Given IMDB Title
+	 */	
+	public static String getYear(String title) {
+		String year = null;
+		Connection c;
+		ResultSet res = null;
+		PreparedStatement stmt;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			String sql = "select Year from IMDBInfo where FileFullPath in(select FileFullPath from LocalInfo where Title=?)";
+			stmt = c.prepareStatement(sql);
+			stmt.setString(1, title);
+			res = stmt.executeQuery();
+			while (res.next()) {
+				year = (res.getString("Year"));
+			}
+			res.close();
+			stmt.close();
+			c.close();
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e);
+		}
+		return year;
+	}	
+	/**
+	 * Returns File size of the movie
+	 */	
+	public static String getSize(String title) {
+		String filesize = null;
+		Connection c;
+		ResultSet res = null;
+		PreparedStatement stmt;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			String sql = "select FileSize from LocalInfo where Title=?";
+			stmt = c.prepareStatement(sql);
+			stmt.setString(1, title);
+			res = stmt.executeQuery();
+			while (res.next()) {
+				filesize = (res.getString("FileSize"));
+			}
+			res.close();
+			stmt.close();
+			c.close();
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e);
+		}
+		return filesize;
+	}
 
+	/**
+	 * Searches movie and returns topmost result
+	 * @param moviename
+	 * @return
+	 */
+	public static String searchOneMovie(String moviename) {
+		ImdbApi imdbApi = new ImdbApi();
+		try {
+			Map<String, List<SearchObject>> searchResultMap = imdbApi.getSearch(moviename);
+			List<SearchObject> result = searchResultMap.get("Search results");
+			for (SearchObject so : result) {
+				try {
+					if (so instanceof ImdbMovieDetails && ((ImdbMovieDetails) so).getType().equals("feature"))//filtering movies only
+						if (!((ImdbMovieDetails) so).getImdbId().isEmpty()) {   //picking the first element of search result
+							return ((ImdbMovieDetails) so).getImdbId();
+						}
+				} catch (Exception e) {
+				}
+			}
+		} catch (Exception e) {
+		}
+		return "";
+	}
+	
+	/**Removes movie from catalog
+	 * @param title
+	 */
+	public static void removeMovie(String title)
+	{
+		Connection c;
+		PreparedStatement instmt;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			String filefullpath, IMDBid;					
+			filefullpath = Tools.getFullPath(title);
+			IMDBid = Tools.getIMDBID(title);
+
+			// Remove from LocalInfo
+			instmt = c.prepareStatement("delete from LocalInfo where Title=?");
+			instmt.setString(1, title);
+			instmt.execute();
+
+			// Remove from IMDBInfo
+			instmt = c.prepareStatement("delete from IMDBInfo where IMDBID=?");
+			instmt.setString(1, IMDBid);
+			instmt.execute();
+
+			// Remove from GenreInfo
+			instmt = c.prepareStatement("delete from GenreInfo where IMDBID=?");
+			instmt.setString(1, IMDBid);
+			instmt.execute();
+
+			// Remove from ActorInfo
+			instmt = c.prepareStatement("delete from ActorInfo where IMDBID=?");
+			instmt.setString(1, IMDBid);
+			instmt.execute();
+
+			// Remove from LanguageInfo
+			instmt = c.prepareStatement("delete from LanguageInfo where FileFullPath=?");
+			instmt.setString(1, filefullpath);
+			instmt.execute();
+
+			//RemovingPoster 
+			File file = new File("Posters\\" + IMDBid + ".jpg");
+			file.delete();
+			c.close();
+		}
+		catch (Exception e) 
+		{
+			JOptionPane.showMessageDialog(null, e);
+		}
+	}
+	
+	/**
+	 * Removes invalid entries from catalog. Invalid like file moved or renamed or deleted but still exists in catalog with old data
+	 */
+	public static void checkInvlaidEntries() {
+		Connection c;
+		Statement stmt;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
+			System.out.println("Opened database successfully");
+			stmt = c.createStatement();
+			ResultSet res = stmt.executeQuery("select Title,FileFullPath from LocalInfo");
+			int count = 0;
+			List<String> obselete = new ArrayList<String>();
+			while (res.next()) {
+				File file = new File(res.getString("FileFullPath"));
+				if (!file.exists()) {
+					obselete.add(res.getString("Title")); //Adding invalid entries into list
+					count++; //counting invalid entries
+				}
+			}
+			c.close();
+			for (String title : obselete) {
+				System.out.println("Removing " + title);
+				removeMovie(title);// deleting movies one by one
+			}
+			if (count > 0)
+				JOptionPane.showMessageDialog(null, "Invalid entries removed " + count);
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e.getMessage());
+		}
+	}
+	/**
+	 * Checks in the set folders if any new movies are available
+	 */
+	public static void checkNew()
+	{
+		ScanFolders obj=new ScanFolders();//calling scanfolders to get the list of the new movies
+		obj.initmovielist();// populating the list
+		int	count=obj.getTblmoviepath().getModel().getRowCount();// getting total number of entries
+		if(count>0)// if any file found then show option to add them to catalog
+		{
+			int ret = JOptionPane.showConfirmDialog(null, count+" new movies found, Do you want to add them to collection?");
+			if (ret == JOptionPane.YES_OPTION) {
+				obj.setVisible(true);
+				obj.setModal(true);
+			}
+		}
+		
+	}
 }
+
+

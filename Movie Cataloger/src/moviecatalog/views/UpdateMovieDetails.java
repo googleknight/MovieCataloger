@@ -6,16 +6,17 @@
 package moviecatalog.views;
 
 import java.awt.BorderLayout;
-import java.awt.Graphics;
+
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
-import com.omdbapi.Movie;
-import com.omdbapi.Omdb;
+import com.omertron.imdbapi.ImdbApi;
+import com.omertron.imdbapi.model.ImdbCast;
+import com.omertron.imdbapi.model.ImdbMovieDetails;
+
 import moviecatalog.common.Tools;
-import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.UIManager;
@@ -29,8 +30,9 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.JTextArea;
 import javax.swing.ImageIcon;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -44,6 +46,7 @@ public class UpdateMovieDetails extends JDialog {
 	private String filefullpath;
 	private String IMDBid="0";
 	private String OldIMDBid="0";
+	private int poster=-1;
 	
 	
 	private final JPanel contentPanel = new JPanel();
@@ -100,8 +103,7 @@ public class UpdateMovieDetails extends JDialog {
 	 */
 	public UpdateMovieDetails(String filefullpath) {
 		
-		this.filefullpath=filefullpath;
-		
+		this.filefullpath=filefullpath;		
 		initComponents();
 		loadMovieDetails();		
 		createEvents();
@@ -129,6 +131,8 @@ public class UpdateMovieDetails extends JDialog {
 		lblLanguage = new JLabel("Language");
 		
 		lblCountry = new JLabel("Country");
+		lblCountry.setVisible(false);
+		lblCountry.setEnabled(false);
 		
 		lblRating = new JLabel("Rating");
 		
@@ -147,7 +151,6 @@ public class UpdateMovieDetails extends JDialog {
 		txtDirector.setColumns(10);
 		
 		txtYear = new JTextField();
-		txtYear.setEditable(false);
 		txtYear.setColumns(10);
 		
 		txtLanguage = new JTextField();
@@ -155,6 +158,8 @@ public class UpdateMovieDetails extends JDialog {
 		txtLanguage.setColumns(10);
 		
 		txtCountry = new JTextField();
+		txtCountry.setVisible(false);
+		txtCountry.setEnabled(false);
 		txtCountry.setEditable(false);
 		txtCountry.setColumns(10);
 		
@@ -400,28 +405,37 @@ public class UpdateMovieDetails extends JDialog {
 		try {
 			if(!IMDBid.equals("0"))
 			{
-				Movie movie=new Omdb().fullPlot().getById(IMDBid);
+				
+				ImdbApi imdbApi = new ImdbApi();
+				ImdbMovieDetails movie =imdbApi.getFullDetails(IMDBid);
 				txtTitle.setText(movie.getTitle());
-				txtDirector.setText(movie.getDirector());
-				txtYear.setText(movie.getYear());
-				txtLanguage.setText(movie.getLanguage());
-				txtCountry.setText(movie.getCountry());
-				txtRating.setText(movie.getRated());
-				txtIMDB.setText(movie.getImdbRating()+"");
-				txtAreaActors.setText(movie.getActors().toString());
-				txtAreaPlot.setText(movie.getPlot());
+				txtDirector.setText(movie.getDirectors().get(0).getPerson().getName());
+				txtYear.setText(movie.getYear()+"");
+				//txtLanguage.setText(movie.getLanguage());
+				//txtCountry.setText(movie.getCountry());
+				txtRating.setText(movie.getCertificate().get("certificate"));
+				txtIMDB.setText(movie.getRating()+"");
+				String actors="";
+				for(ImdbCast ob:movie.getCast())
+					actors+=ob.getPerson().getName()+" ";
+				txtAreaActors.setText(actors);
+				if(imdbApi.getTitlePlot(IMDBid).isEmpty())
+					txtAreaPlot.setText(movie.getBestPlot().getOutline());
+				else
+					txtAreaPlot.setText(imdbApi.getTitlePlot(IMDBid).get(0).getText());
 				File file=new File("Posters\\"+IMDBid+".jpg");
 				if(file.exists())
 					file.delete();
-				if(!movie.getPoster().equals("N/A"))
-					lblposter.setIcon(Tools.scaleImage(new ImageIcon(ImageIO.read(movie.getPosterURL())),150,200));
+				if(poster!=-1)
+					lblposter.setIcon(Tools.scaleImage(new ImageIcon(poster+".jpg"),150,200));
 				txtAreaGenre.setText(movie.getGenres().toString());
 			}
 			
 		} 
+		//catch(IIOException e1){}
 		catch (Exception e) {
 		
-			JOptionPane.showMessageDialog(null, e.getMessage());
+			//JOptionPane.showMessageDialog(null, e.getMessage());
 		}
 	
 		
@@ -439,13 +453,12 @@ public class UpdateMovieDetails extends JDialog {
 				obj.setModal(true);
 				obj.setVisible(true);
 				if(!obj.getIMDBId().equals("0"))
-				{
-					txtYear.setEditable(false);
+				{					
 					IMDBid=obj.getIMDBId();
+					poster=obj.getPoster();
 				}
 				else
-				{
-					txtYear.setEditable(true);
+				{					
 					JOptionPane.showMessageDialog(null, "Please enter correct movie name or enter year to find movie information online.");
 				}
 				loaddetails();
@@ -461,8 +474,10 @@ public class UpdateMovieDetails extends JDialog {
 		//Save work and exit.
 		btnSave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				updateIMDBInfo();
-				dispose();			
+				if(!OldIMDBid.equals(IMDBid))
+					updateIMDBInfo();
+				dispose();
+				
 			}
 		});
 		
@@ -476,23 +491,19 @@ public class UpdateMovieDetails extends JDialog {
 	protected void updateIMDBInfo() {
 		Connection c;
 		try {
-			System.out.println("Update Invoked");
-			
+			System.out.println("Update Invoked");			
 			Class.forName("org.sqlite.JDBC");
 			c = DriverManager.getConnection("jdbc:sqlite:"+Tools.getDBNAME());
 			System.out.println("Opened database successfully");
-			
-			Movie movie=new Omdb().getById(IMDBid);
+			ImdbApi imdbApi = new ImdbApi();
+			ImdbMovieDetails movie =imdbApi.getFullDetails(IMDBid);			
 			ImageIcon icon=null;
-			if(!movie.getPoster().equals("N/A"))
+			if(poster!=-1)
 			{
-				icon=new ImageIcon(ImageIO.read(movie.getPosterURL()));
-				BufferedImage bimg = new BufferedImage(icon.getIconWidth(),icon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
-				Graphics g = bimg.createGraphics();
-				icon.paintIcon(null, g, 0,0);
-				g.dispose();
+				//Temporary poster file moved to Posters Directory and renamed
+				File temp=new File(poster+".jpg");
 				File outputfile= new File("Posters\\"+IMDBid+".jpg");
-				ImageIO.write(bimg, "jpg", outputfile);
+				Files.move(temp.toPath(), outputfile.toPath(), StandardCopyOption.REPLACE_EXISTING);				
 			}
 			
 			PreparedStatement instmt = c.prepareStatement("select * from IMDBInfo where FileFullPath=?");
@@ -500,7 +511,6 @@ public class UpdateMovieDetails extends JDialog {
 			PreparedStatement instmt2;
 			PreparedStatement instmt3;
 			PreparedStatement instmt4;
-			PreparedStatement instmt5;
 			instmt.setString(1, filefullpath);
 			ResultSet res=instmt.executeQuery();
 			if(!res.isBeforeFirst() ) //Insert if not exists
@@ -523,12 +533,12 @@ public class UpdateMovieDetails extends JDialog {
 
 				// Removing incorrect data from GenreInfo
 				instmt = c.prepareStatement("delete from GenreInfo where IMDBID=?");
-				instmt.setString(1, IMDBid);
+				instmt.setString(1, OldIMDBid);
 				instmt.execute();
 
 				// Removing incorrect data from ActorInfo
 				instmt = c.prepareStatement("delete from ActorInfo where IMDBID=?");
-				instmt.setString(1, IMDBid);
+				instmt.setString(1, OldIMDBid);
 				instmt.execute();
 				
 				//Inserting new values
@@ -537,7 +547,7 @@ public class UpdateMovieDetails extends JDialog {
 			}
 			
 			instmt2 = c.prepareStatement("update LocalInfo set Title=?,MyRating=?, Watched=? where FileFullPath=?");
-			instmt5=c.prepareStatement("update LanguageInfo set Language=? where FileFullPath=?");
+			
 			
 			instmt1.setString(1, IMDBid);			
 			instmt1.setString(2, txtDirector.getText());
@@ -574,9 +584,9 @@ public class UpdateMovieDetails extends JDialog {
 			
 			//ActorInfo updated
 			instmt3.setString(2, IMDBid);
-			for(String x:movie.getActors())
+			for(ImdbCast x:movie.getCast())
 			{
-				instmt3.setString(1, x);
+				instmt3.setString(1, x.getPerson().getName());
 				try{
 					
 					instmt3.executeUpdate();
@@ -602,7 +612,7 @@ public class UpdateMovieDetails extends JDialog {
 				}
 			}
 			
-			if(!IMDBid.equals(OldIMDBid))	//Update Movie Information only after IMDBID is changed
+			/*if(!IMDBid.equals(OldIMDBid))	//Update Movie Information only after IMDBID is changed
 			{
 				if(Tools.getMovieLanguages(filefullpath).isEmpty())
 				{
@@ -622,9 +632,9 @@ public class UpdateMovieDetails extends JDialog {
 						}
 					}
 				}
-			}
+			}*/
 			c.close();
-
+			dispose();
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e);
 

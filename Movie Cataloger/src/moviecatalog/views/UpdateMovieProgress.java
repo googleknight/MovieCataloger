@@ -10,12 +10,14 @@ import java.awt.BorderLayout;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
@@ -30,9 +32,9 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import com.omdbapi.Movie;
-import com.omdbapi.Omdb;
-
+import com.omertron.imdbapi.ImdbApi;
+import com.omertron.imdbapi.model.ImdbCast;
+import com.omertron.imdbapi.model.ImdbMovieDetails;
 
 import moviecatalog.common.Tools;
 import java.awt.Toolkit;
@@ -177,12 +179,17 @@ class updateMovieProgressbar extends Thread {
 					moviename=moviename.replace(" and ", " & "); 
 				}
 			try {
-					Movie movie = new Omdb().fullPlot().searchOneMovie(moviename);
-					updateIMDBInfo(movie);	//Updating IMDBinfo
-					obj.setPgrsbr(obj.getPgrsbr().getValue() + 1); //Progress bar updated
-					obj.setLblprogress(++i + " Movies updated");	// Movies updated count updated
+					String imdbid=Tools.searchOneMovie(moviename);
+					if(!imdbid.isEmpty())
+					{
+						updateIMDBInfo(imdbid);	//Updating IMDBinfo
+						obj.setPgrsbr(obj.getPgrsbr().getValue() + 1); //Progress bar updated
+						obj.setLblprogress(++i + " Movies updated");	// Movies updated count updated
+					}
+					
 				} catch (Exception e) {
 				}
+			
 
 			}
 		}
@@ -195,18 +202,19 @@ class updateMovieProgressbar extends Thread {
 	////Updates Databases
 	//////////////////////////////////////////////////////////////////////////////////
 
-	protected void updateIMDBInfo(Movie movie) {
+	protected void updateIMDBInfo(String IMDBid) {
 
 		Connection c;
 		try {
 			System.out.println("Update Invoked");
-			String IMDBid = movie.getImdbId();
+			ImdbApi imdbApi = new ImdbApi();
+			ImdbMovieDetails movie =imdbApi.getFullDetails(IMDBid);			
 			Class.forName("org.sqlite.JDBC");
 			c = DriverManager.getConnection("jdbc:sqlite:" + Tools.getDBNAME());
 			System.out.println("Opened database successfully");
 			ImageIcon icon = null;
-			if (!movie.getPoster().equals("N/A")) {//get poster image file and saves it if available.
-				icon = new ImageIcon(ImageIO.read(movie.getPosterURL()));
+			try{if (!movie.getImage().getUrl().isEmpty()) {//get poster image file and saves it if available.
+				icon = new ImageIcon(ImageIO.read(new URL(movie.getImage().getUrl())));
 				BufferedImage bimg = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(),
 						BufferedImage.TYPE_INT_RGB);
 				Graphics g = bimg.createGraphics();
@@ -215,7 +223,7 @@ class updateMovieProgressbar extends Thread {
 				File outputfile = new File("Posters\\" + IMDBid + ".jpg");
 				ImageIO.write(bimg, "jpg", outputfile);
 			}
-
+			}catch(IIOException e1){}
 			PreparedStatement instmt1;
 			PreparedStatement instmt2;
 			PreparedStatement instmt3;
@@ -229,12 +237,16 @@ class updateMovieProgressbar extends Thread {
 
 
 			instmt1.setString(1, filefullpath);
-			instmt1.setString(2, movie.getDirector());
-			instmt1.setString(3, movie.getYear());
-			instmt1.setString(4, movie.getCountry());
-			instmt1.setString(5, movie.getRated());
-			instmt1.setString(6, movie.getImdbRating() + "");
-			instmt1.setString(7, movie.getPlot());
+			instmt1.setString(2, movie.getDirectors().get(0).getPerson().getName());
+			instmt1.setString(3, movie.getYear()+"");
+			instmt1.setString(4, "N/A");
+			instmt1.setString(5, movie.getCertificate().get("certificate"));
+			instmt1.setString(6, movie.getRating() + "");
+			
+			if(imdbApi.getTitlePlot(IMDBid).isEmpty())
+				instmt1.setString(7, movie.getBestPlot().getOutline());
+			else
+				instmt1.setString(7, imdbApi.getTitlePlot(IMDBid).get(0).getText());
 			instmt1.setString(8, IMDBid);
 
 			//IMDBInfo updated
@@ -255,14 +267,16 @@ class updateMovieProgressbar extends Thread {
 
 			//ActorInfo updated
 			instmt3.setString(2, IMDBid);
-			for (String x : movie.getActors()) {
-				instmt3.setString(1, x);
+			for(ImdbCast ob:movie.getCast())
+			{
+				instmt3.setString(1, ob.getPerson().getName());
 				try {
 					instmt3.executeUpdate();
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(null,e);
 				}
 			}
+			
 			//GenreInfo updated
 			instmt4.setString(2, IMDBid);
 			for (String x : movie.getGenres()) {
@@ -274,7 +288,7 @@ class updateMovieProgressbar extends Thread {
 				}
 			}
 			//LanguageInfo updated
-			if (Tools.getLanguage(filefullpath).isEmpty())//update language if not exists in database
+			/*if (Tools.getLanguage(filefullpath).isEmpty())//update language if not exists in database
 			{
 				String Languages[]=movie.getLanguage().split(",");
 				instmt5 = c.prepareStatement("insert or ignore into LanguageInfo(Language,FileFullPath) values(?,?)");
@@ -288,12 +302,12 @@ class updateMovieProgressbar extends Thread {
 						JOptionPane.showMessageDialog(null,e);
 					}					
 				}
-			}
+			}*/
 
 			c.close();
 
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null,e);
+			//JOptionPane.showMessageDialog(null,e);
 
 		}
 
