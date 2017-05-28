@@ -38,21 +38,18 @@
 * Connect to internet and select batch update and choose Update selected and wait.
 * Then select Update by Filtering movie name.
 * Now update rest of the movies individually, and explore the software now. Your Catalog is ready.
+* For any help checkout the help menu.
+
 
 ## Things that needs to be done in future
-* Update movie by giving IMDB ID manually.
-* Auto search for new movies in selected folders at boot up of software and asks to add them in catalog.
+* Speed up the updation of movies from IMDB in batch update.
 * Import/export database and files.
-* Create a new menu item which generates custom view which will shows movies categorized in genre, year, language, country, director wise and generate pie chart of the data.
-* Provide a new window to copy movies to another source.
 * Write JUnit files for unit testing all methods.
 * Make it cross platform compatible.
-* Improve regular expression used to retrieve movie name from file name.
-* Write an independent API/ mechanism to extract movie details from IMDB, in case OMDB API is not working.
 * Improve documentation, add more comments wherever it is required.
 * Find new bugs and fix them.
 * Imrove design, imporve button names, etc.
-* Add new items in menu bar.
 
-
+### Major contributors [Shubham Mathur](https://shubhammathur.me/), [Rishab Garg](http://rishabgarg.me).
+### [Other contributors](https://github.com/googleknight/MovieCataloger/graphs/contributors)
 #### Contributors are welcomed to contribute to this project, just fork this repo and raise a pull request.
