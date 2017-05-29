@@ -1,14 +1,15 @@
 # MovieCataloger
 > Movie Cataloger is a cataloging and organizing software developed for personal use only.
-> It will help the user to maintain their movie collection efficiently and in an organized way.
+> It helps user to maintain their movie collection efficiently and in an organized way.
 > It is capable to scan and search recursively the desired folders, drives for movies and adds them to catalog.
 > It is capable of retrieving movie’s name and other important meta data like, language, runtime, quality etc from the file.
-> It has the ability to directly fetch movie data from the internet movie database (IMDb) using [OMDB](http://www.omdbapi.com/) API.
+> It has the ability to directly fetch movie data from the internet movie database (IMDb).
 > Users can see their collection of their movies in a single window despite having their actual files located across various drives and folders. 
 > Users can mark those movies which they have watched. They can also give a rating for a movie. 
 > The data fetched will help users to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
 > It can fetch the data for multiple movies from IMDB at once, and users can update movie details of individual movie as well.
-> Users can play movies, find their location on the drive and can search for a particular movies in the Catalog.
+> Users can play or copy movies, find their location on the drive and can search for a particular movies in the Catalog.
+> Users can view movies category wise in the catalog, can view pie chart showing analysis of their collection.
 
 ## Screenshot
 
@@ -43,9 +44,9 @@
 
 ## Things that needs to be done in future
 * Speed up the updation of movies from IMDB in batch update.
+* Make it cross platform compatible.
 * Import/export database and files.
 * Write JUnit files for unit testing all methods.
-* Make it cross platform compatible.
 * Improve documentation, add more comments wherever it is required.
 * Find new bugs and fix them.
 * Imrove design, imporve button names, etc.
