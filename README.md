@@ -2,17 +2,17 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fd4ed1810824df1a75e1d7a429a3a89)](https://www.codacy.com/app/shubham.mathur2014/MovieCataloger?utm_source=github.com&utm_medium=referral&utm_content=googleknight/MovieCataloger&utm_campaign=badger)
 
-> Movie Cataloger is a cataloging and organizing software developed for personal use only.
-> It helps user to maintain their movie collection efficiently and in an organized way.
-> It is capable to scan and search recursively the desired folders, drives for movies and adds them to catalog.
-> It is capable of retrieving movie’s name and other important meta data like, language, runtime, quality etc from the file.
-> It has the ability to directly fetch movie data from the internet movie database (IMDb).
-> Users can see their collection of their movies in a single window despite having their actual files located across various drives and folders. 
-> Users can mark those movies which they have watched. They can also give a rating for a movie. 
-> The data fetched will help users to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
-> It can fetch the data for multiple movies from IMDB at once, and users can update movie details of individual movie as well.
-> Users can play or copy movies, find their location on the drive and can search for a particular movies in the Catalog.
-> Users can view movies category wise in the catalog, can view pie chart showing analysis of their collection.
+ Movie Cataloger is a cataloging and organizing software developed for personal use only.
+ It helps user to maintain their movie collection efficiently and in an organized way.
+ It is capable to scan and search recursively the desired folders, drives for movies and adds them to catalog.
+ It is capable of retrieving movie’s name and other important meta data like, language, runtime, quality etc from the file.
+ It has the ability to directly fetch movie data from the internet movie database (IMDb).
+ Users can see their collection of their movies in a single window despite having their actual files located across various drives and folders. 
+ Users can mark those movies which they have watched. They can also give a rating for a movie. 
+ The data fetched will help users to know more about that particular movie, by showing its poster, IMDb rating, genre, year of release, plot summary, etc like details.
+ It can fetch the data for multiple movies from IMDB at once, and users can update movie details of individual movie as well.
+ Users can play or copy movies, find their location on the drive and can search for a particular movies in the Catalog.
+ Users can view movies category wise in the catalog, can view pie chart showing analysis of their collection.
 
 ## Screenshot
 
@@ -33,7 +33,7 @@
 * Run project by MainWindow.java
 
 ## Instructions to install the latest build.
-* Download the [setup](https://raw.githubusercontent.com/googleknight/MovieCataloger/master/Setup/MovieCatalogerSetup.exe) and follow on screen instructions.
+* Download the [setup](https://github.com/googleknight/MovieCataloger/releases) and follow on screen instructions.
 * ### Do not install it in C Drive, there it will not going to work properly.
 
 ## Instructions for first time users
